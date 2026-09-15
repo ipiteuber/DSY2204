@@ -48,24 +48,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import cl.duoc.vozvisible.data.ModoComunicacion
+import cl.duoc.vozvisible.data.NivelAudicion
 import cl.duoc.vozvisible.data.RepositorioUsuarios
+import cl.duoc.vozvisible.data.ResultadoRegistro
 import cl.duoc.vozvisible.data.Usuario
+import cl.duoc.vozvisible.data.apoyosDisponibles
+import cl.duoc.vozvisible.data.esCorreoValido
 import cl.duoc.vozvisible.ui.theme.VozVisibleTheme
-
-private val nivelesAudicion = listOf(
-    "Hipoacusia leve",
-    "Hipoacusia moderada",
-    "Hipoacusia severa",
-    "Sordera total"
-)
-
-private val modosComunicacion = listOf("Escribir", "Hablar", "Ambos")
-
-private val apoyos = listOf(
-    "Avisos con vibración",
-    "Subtítulos en pantalla completa",
-    "Frases rápidas guardadas"
-)
 
 // Registro de usuario. Guarda la cuenta nueva en el arreglo y lo muestra en la tabla.
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,15 +67,16 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
     var claveRepetida by rememberSaveable { mutableStateOf("") }
 
     var nivelExpandido by rememberSaveable { mutableStateOf(false) }
-    var nivel by rememberSaveable { mutableStateOf(nivelesAudicion.first()) }
-    var modo by rememberSaveable { mutableStateOf(modosComunicacion.first()) }
+    var nivel by rememberSaveable { mutableStateOf(NivelAudicion.LEVE) }
+    var modo by rememberSaveable { mutableStateOf(ModoComunicacion.ESCRIBIR) }
     var aceptaTerminos by rememberSaveable { mutableStateOf(false) }
     var error by rememberSaveable { mutableStateOf("") }
 
     val seleccionados = remember { mutableStateMapOf<String, Boolean>() }
 
+    val correoInvalido = correo.isNotBlank() && !correo.esCorreoValido()
     val errorClave = claveRepetida.isNotEmpty() && claveRepetida != clave
-    val formularioValido = nombre.isNotBlank() && correo.isNotBlank() &&
+    val formularioValido = nombre.isNotBlank() && correo.esCorreoValido() &&
             clave.isNotEmpty() && clave == claveRepetida && aceptaTerminos
 
     Surface(modifier = Modifier.fillMaxSize()) {
@@ -129,8 +120,13 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                     },
                     label = { Text("Correo electrónico") },
                     singleLine = true,
-                    isError = error.isNotEmpty(),
-                    supportingText = { if (error.isNotEmpty()) Text(error) },
+                    isError = error.isNotEmpty() || correoInvalido,
+                    supportingText = {
+                        when {
+                            error.isNotEmpty() -> Text(error)
+                            correoInvalido -> Text("Usa un formato como nombre@correo.cl.")
+                        }
+                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -175,7 +171,7 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                     onExpandedChange = { nivelExpandido = !nivelExpandido }
                 ) {
                     OutlinedTextField(
-                        value = nivel,
+                        value = nivel.etiqueta,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Selecciona una opción") },
@@ -190,9 +186,9 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                         expanded = nivelExpandido,
                         onDismissRequest = { nivelExpandido = false }
                     ) {
-                        nivelesAudicion.forEach { opcion ->
+                        NivelAudicion.entries.forEach { opcion ->
                             DropdownMenuItem(
-                                text = { Text(opcion) },
+                                text = { Text(opcion.etiqueta) },
                                 onClick = {
                                     nivel = opcion
                                     nivelExpandido = false
@@ -211,7 +207,7 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                 )
                 // selectableGroup le dice a TalkBack que es una seleccion unica
                 Column(Modifier.selectableGroup()) {
-                    modosComunicacion.forEach { opcion ->
+                    ModoComunicacion.entries.forEach { opcion ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -225,7 +221,7 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                         ) {
                             RadioButton(selected = modo == opcion, onClick = null)
                             Spacer(Modifier.size(12.dp))
-                            Text(opcion, style = MaterialTheme.typography.bodyLarge)
+                            Text(opcion.etiqueta, style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
@@ -237,7 +233,7 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.semantics { heading() }
                 )
-                apoyos.forEach { apoyo ->
+                apoyosDisponibles.forEach { apoyo ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -280,12 +276,17 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
 
                 Button(
                     onClick = {
-                        val nuevo = Usuario(nombre.trim(), correo.trim(), clave, modo)
-                        val problema = RepositorioUsuarios.registrar(nuevo)
-                        if (problema != null) {
-                            error = problema
-                        } else {
-                            onRegistrado(nuevo)
+                        val nuevo = Usuario(
+                            nombre = nombre.trim(),
+                            correo = correo.trim(),
+                            clave = clave,
+                            nivel = nivel,
+                            modo = modo,
+                            apoyos = seleccionados.filterValues { it }.keys.toSet()
+                        )
+                        when (val resultado = RepositorioUsuarios.registrar(nuevo)) {
+                            is ResultadoRegistro.Exito -> onRegistrado(resultado.usuario)
+                            is ResultadoRegistro.Error -> error = resultado.mensaje
                         }
                     },
                     enabled = formularioValido,
@@ -317,6 +318,9 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 TablaUsuarios()
 
+                Spacer(Modifier.height(16.dp))
+                ResumenRegistros()
+
                 Spacer(Modifier.height(24.dp))
             }
         }
@@ -336,9 +340,51 @@ private fun TablaUsuarios() {
             FilaUsuario("Nombre", "Correo", "Modo", esEncabezado = true)
             HorizontalDivider()
             RepositorioUsuarios.listado.forEach { usuario ->
-                FilaUsuario(usuario.nombre, usuario.correo, usuario.modoComunicacion)
+                FilaUsuario(usuario.nombre, usuario.correo, usuario.modo.etiqueta)
                 HorizontalDivider()
             }
+        }
+    }
+}
+
+@Composable
+private fun ResumenRegistros() {
+    val datos = RepositorioUsuarios.estadisticas()
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "Resumen de las cuentas",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.semantics { heading() }
+            )
+            Spacer(Modifier.height(8.dp))
+            datos.nombresPorModo.forEach { (modo, nombres) ->
+                Text(
+                    text = "${modo.etiqueta}: ${nombres.joinToString(", ")}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Niveles: " + datos.totalPorNivel.entries.joinToString(" · ") {
+                    "${it.key.etiqueta} (${it.value})"
+                },
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = if (datos.conApoyos.isEmpty()) {
+                    "Todavía nadie activa apoyos."
+                } else {
+                    "Con apoyos activos: ${datos.conApoyos.joinToString(", ")}"
+                },
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
     }
 }
