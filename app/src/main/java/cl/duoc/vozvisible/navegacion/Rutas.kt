@@ -14,4 +14,4 @@ object RutaRegistro
 object RutaRecuperar
 
 @Serializable
-data class RutaInicio(val nombre: String)
+data class RutaInicio(val nombre: String, val correo: String)

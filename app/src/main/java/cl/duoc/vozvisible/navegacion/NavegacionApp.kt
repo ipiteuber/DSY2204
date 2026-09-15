@@ -19,7 +19,7 @@ fun NavegacionApp() {
         composable<RutaLogin> {
             LoginScreen(
                 onIngresar = { usuario ->
-                    navController.navigate(RutaInicio(usuario.nombre)) {
+                    navController.navigate(RutaInicio(usuario.nombre, usuario.correo)) {
                         // Saca el login de la pila para que el boton atras no vuelva a el
                         popUpTo(RutaLogin) { inclusive = true }
                     }
@@ -32,7 +32,7 @@ fun NavegacionApp() {
         composable<RutaRegistro> {
             RegistroScreen(
                 onRegistrado = { usuario ->
-                    navController.navigate(RutaInicio(usuario.nombre)) {
+                    navController.navigate(RutaInicio(usuario.nombre, usuario.correo)) {
                         popUpTo(RutaLogin) { inclusive = true }
                     }
                 },
@@ -48,6 +48,7 @@ fun NavegacionApp() {
             val ruta = entrada.toRoute<RutaInicio>()
             InicioScreen(
                 nombreUsuario = ruta.nombre,
+                correoUsuario = ruta.correo,
                 onCerrarSesion = {
                     navController.navigate(RutaLogin) {
                         popUpTo(0) { inclusive = true }
