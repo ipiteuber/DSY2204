@@ -6,7 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Escala mas grande que la de Material por defecto: la lectura es el canal principal
+// Escala mas grande que la de Material por defecto: La lectura es el canal principal
 // de la app, asi que el texto no puede quedar chico.
 val Tipografia = Typography(
     headlineLarge = TextStyle(

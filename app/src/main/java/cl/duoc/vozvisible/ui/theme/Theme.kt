@@ -45,7 +45,7 @@ private val EsquemaOscuro = darkColorScheme(
     onError = Color(0xFF601410)
 )
 
-// Sin dynamicColor: los colores dinamicos del sistema pueden bajar el contraste
+// Sin dynamicColor: Los colores dinamicos del sistema pueden bajar el contraste
 // y aca el contraste es un requisito, no una preferencia estetica.
 @Composable
 fun VozVisibleTheme(
