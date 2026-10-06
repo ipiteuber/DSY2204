@@ -1,7 +1,5 @@
 package cl.duoc.vozvisible.data
 
-import androidx.compose.runtime.mutableStateListOf
-
 enum class NivelAudicion(val etiqueta: String) {
     LEVE("Hipoacusia leve"),
     MODERADA("Hipoacusia moderada"),
@@ -68,39 +66,3 @@ val usuariosIniciales = arrayOf(
         setOf("Avisos con vibración", "Frases rápidas guardadas")
     )
 )
-
-object RepositorioUsuarios {
-
-    private val usuarios = mutableStateListOf(*usuariosIniciales)
-
-    val listado: List<Usuario> get() = usuarios
-
-    fun registrar(usuario: Usuario): ResultadoRegistro = when {
-        !usuario.correo.esCorreoValido() ->
-            ResultadoRegistro.Error("Escribe un correo válido, por ejemplo nombre@correo.cl.")
-
-        buscarPorCorreo(usuario.correo) != null ->
-            ResultadoRegistro.Error("Ese correo ya está registrado.")
-
-        else -> ResultadoRegistro.Exito(usuario).also { usuarios.add(usuario) }
-    }
-
-    fun validar(correo: String, clave: String): Usuario? {
-        val encontrado = buscarPorCorreo(correo)
-        return if (encontrado != null && encontrado.clave == clave) encontrado else null
-    }
-
-    fun buscarPorCorreo(correo: String): Usuario? =
-        usuarios.find { it.correo.equals(correo.trim(), ignoreCase = true) }
-
-    fun estadisticas(): EstadisticasUsuarios = usuarios.toList().let { lista ->
-        EstadisticasUsuarios(
-            nombresPorModo = lista.groupBy { it.modo }
-                .mapValues { (_, grupo) -> grupo.map { usuario -> usuario.nombre }.sorted() },
-            totalPorNivel = lista.groupingBy { it.nivel }.eachCount(),
-            conApoyos = lista.filter { it.apoyos.isNotEmpty() }
-                .sortedBy { it.nombre }
-                .map { it.nombre }
-        )
-    }
-}
