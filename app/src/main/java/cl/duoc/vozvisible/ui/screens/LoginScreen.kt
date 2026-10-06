@@ -29,33 +29,40 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import cl.duoc.vozvisible.data.RepositorioUsuarios
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.duoc.vozvisible.data.Usuario
 import cl.duoc.vozvisible.ui.theme.VozVisibleTheme
+import cl.duoc.vozvisible.ui.viewmodel.LoginViewModel
 
-// Inicio de sesion. Valida el correo y la clave contra el arreglo de usuarios.
+// Inicio de sesion. El ViewModel consulta el repositorio de cuentas activo.
 @Composable
 fun LoginScreen(
     onIngresar: (Usuario) -> Unit,
     onIrARegistro: () -> Unit,
-    onIrARecuperar: () -> Unit
+    onIrARecuperar: () -> Unit,
+    modelo: LoginViewModel = viewModel()
 ) {
-    var correo by rememberSaveable { mutableStateOf("") }
-    var clave by rememberSaveable { mutableStateOf("") }
-    var recordarme by rememberSaveable { mutableStateOf(false) }
-    var error by rememberSaveable { mutableStateOf("") }
+    val estado by modelo.estado.collectAsStateWithLifecycle()
+
+    LaunchedEffect(estado.autenticado) {
+        estado.autenticado?.let { usuario ->
+            modelo.limpiarAutenticado()
+            onIngresar(usuario)
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -85,18 +92,15 @@ fun LoginScreen(
                 Spacer(Modifier.height(32.dp))
 
                 OutlinedTextField(
-                    value = correo,
-                    onValueChange = {
-                        correo = it
-                        error = ""
-                    },
+                    value = estado.correo,
+                    onValueChange = modelo::cambiarCorreo,
                     label = { Text("Correo electrónico") },
                     placeholder = { Text("nombre@correo.cl") },
                     leadingIcon = {
                         Icon(Icons.Filled.Email, contentDescription = null)
                     },
                     singleLine = true,
-                    isError = error.isNotEmpty(),
+                    isError = estado.error.isNotEmpty(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -104,29 +108,28 @@ fun LoginScreen(
                 Spacer(Modifier.height(16.dp))
 
                 OutlinedTextField(
-                    value = clave,
-                    onValueChange = {
-                        clave = it
-                        error = ""
-                    },
+                    value = estado.clave,
+                    onValueChange = modelo::cambiarClave,
                     label = { Text("Contraseña") },
                     leadingIcon = {
                         Icon(Icons.Filled.Lock, contentDescription = null)
                     },
                     singleLine = true,
-                    isError = error.isNotEmpty(),
+                    isError = estado.error.isNotEmpty(),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                if (error.isNotEmpty()) {
+                if (estado.error.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer
                         ),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .semantics { liveRegion = LiveRegionMode.Polite }
                     ) {
                         Row(
                             modifier = Modifier.padding(14.dp),
@@ -138,7 +141,7 @@ fun LoginScreen(
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(Modifier.size(10.dp))
-                            Text(error, style = MaterialTheme.typography.bodyMedium)
+                            Text(estado.error, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -150,13 +153,13 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .toggleable(
-                            value = recordarme,
-                            onValueChange = { recordarme = it }
+                            value = estado.recordarme,
+                            onValueChange = modelo::cambiarRecordarme
                         )
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Checkbox(checked = recordarme, onCheckedChange = null)
+                    Checkbox(checked = estado.recordarme, onCheckedChange = null)
                     Spacer(Modifier.size(12.dp))
                     Text(
                         text = "Recordar mi sesión en este dispositivo",
@@ -167,20 +170,16 @@ fun LoginScreen(
                 Spacer(Modifier.height(16.dp))
 
                 Button(
-                    onClick = {
-                        val usuario = RepositorioUsuarios.validar(correo, clave)
-                        if (usuario == null) {
-                            error = "El correo o la contraseña no coinciden."
-                        } else {
-                            onIngresar(usuario)
-                        }
-                    },
-                    enabled = correo.isNotBlank() && clave.isNotBlank(),
+                    onClick = modelo::ingresar,
+                    enabled = estado.puedeIngresar,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
                 ) {
-                    Text("Ingresar", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = if (estado.cargando) "Ingresando…" else "Ingresar",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
 
                 Spacer(Modifier.height(12.dp))

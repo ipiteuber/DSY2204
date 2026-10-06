@@ -29,34 +29,30 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import cl.duoc.vozvisible.data.RepositorioUsuarios
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.duoc.vozvisible.ui.theme.VozVisibleTheme
+import cl.duoc.vozvisible.ui.viewmodel.RecuperarViewModel
 
 private val metodosEnvio = listOf(
     "Enviar al correo electrónico",
     "Enviar por mensaje de texto"
 )
 
-// Recuperacion de clave. El envio es simulado, solo confirma en pantalla.
+// Recuperacion de clave. Con Firebase activo dispara el correo real de Authentication.
 @Composable
-fun RecuperarScreen(onVolver: () -> Unit) {
-    var correo by rememberSaveable { mutableStateOf("") }
-    var metodo by rememberSaveable { mutableStateOf(metodosEnvio.first()) }
-    var mensaje by rememberSaveable { mutableStateOf("") }
-    var esError by rememberSaveable { mutableStateOf(false) }
+fun RecuperarScreen(onVolver: () -> Unit, modelo: RecuperarViewModel = viewModel()) {
+    val estado by modelo.estado.collectAsStateWithLifecycle()
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -84,11 +80,8 @@ fun RecuperarScreen(onVolver: () -> Unit) {
                 Spacer(Modifier.height(24.dp))
 
                 OutlinedTextField(
-                    value = correo,
-                    onValueChange = {
-                        correo = it
-                        mensaje = ""
-                    },
+                    value = estado.correo,
+                    onValueChange = modelo::cambiarCorreo,
                     label = { Text("Correo electrónico") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -109,13 +102,13 @@ fun RecuperarScreen(onVolver: () -> Unit) {
                                 .fillMaxWidth()
                                 .height(48.dp)
                                 .selectable(
-                                    selected = metodo == opcion,
-                                    onClick = { metodo = opcion },
+                                    selected = estado.metodo == opcion,
+                                    onClick = { modelo.cambiarMetodo(opcion) },
                                     role = Role.RadioButton
                                 ),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RadioButton(selected = metodo == opcion, onClick = null)
+                            RadioButton(selected = estado.metodo == opcion, onClick = null)
                             Spacer(Modifier.size(12.dp))
                             Text(opcion, style = MaterialTheme.typography.bodyLarge)
                         }
@@ -125,28 +118,23 @@ fun RecuperarScreen(onVolver: () -> Unit) {
                 Spacer(Modifier.height(24.dp))
 
                 Button(
-                    onClick = {
-                        val existe = RepositorioUsuarios.buscarPorCorreo(correo) != null
-                        esError = !existe
-                        mensaje = if (existe) {
-                            "Listo. Revisa tu bandeja de entrada en unos minutos."
-                        } else {
-                            "No encontramos una cuenta con ese correo."
-                        }
-                    },
-                    enabled = correo.isNotBlank(),
+                    onClick = modelo::enviar,
+                    enabled = estado.correo.isNotBlank() && !estado.cargando,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
                 ) {
-                    Text("Enviar instrucciones", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = if (estado.cargando) "Enviando…" else "Enviar instrucciones",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
 
-                if (mensaje.isNotEmpty()) {
+                if (estado.mensaje.isNotEmpty()) {
                     Spacer(Modifier.height(16.dp))
                     Card(
                         colors = CardDefaults.cardColors(
-                            containerColor = if (esError) {
+                            containerColor = if (estado.esError) {
                                 MaterialTheme.colorScheme.errorContainer
                             } else {
                                 MaterialTheme.colorScheme.primaryContainer
@@ -167,7 +155,7 @@ fun RecuperarScreen(onVolver: () -> Unit) {
                                 modifier = Modifier.size(22.dp)
                             )
                             Spacer(Modifier.size(10.dp))
-                            Text(mensaje, style = MaterialTheme.typography.bodyLarge)
+                            Text(estado.mensaje, style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }

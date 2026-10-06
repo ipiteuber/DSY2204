@@ -32,10 +32,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,36 +47,35 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.duoc.vozvisible.data.EstadisticasUsuarios
 import cl.duoc.vozvisible.data.ModoComunicacion
 import cl.duoc.vozvisible.data.NivelAudicion
-import cl.duoc.vozvisible.data.RepositorioUsuarios
-import cl.duoc.vozvisible.data.ResultadoRegistro
 import cl.duoc.vozvisible.data.Usuario
 import cl.duoc.vozvisible.data.apoyosDisponibles
-import cl.duoc.vozvisible.data.esCorreoValido
+import cl.duoc.vozvisible.data.estadisticas
 import cl.duoc.vozvisible.ui.theme.VozVisibleTheme
+import cl.duoc.vozvisible.ui.viewmodel.RegistroViewModel
 
-// Registro de usuario. Guarda la cuenta nueva en el arreglo y lo muestra en la tabla.
+// Registro de usuario. Crea la cuenta en el repositorio activo y la muestra en la tabla.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
-    var nombre by rememberSaveable { mutableStateOf("") }
-    var correo by rememberSaveable { mutableStateOf("") }
-    var clave by rememberSaveable { mutableStateOf("") }
-    var claveRepetida by rememberSaveable { mutableStateOf("") }
-
+fun RegistroScreen(
+    onRegistrado: (Usuario) -> Unit,
+    onVolver: () -> Unit,
+    modelo: RegistroViewModel = viewModel()
+) {
+    val estado by modelo.estado.collectAsStateWithLifecycle()
     var nivelExpandido by rememberSaveable { mutableStateOf(false) }
-    var nivel by rememberSaveable { mutableStateOf(NivelAudicion.LEVE) }
-    var modo by rememberSaveable { mutableStateOf(ModoComunicacion.ESCRIBIR) }
-    var aceptaTerminos by rememberSaveable { mutableStateOf(false) }
-    var error by rememberSaveable { mutableStateOf("") }
 
-    val seleccionados = remember { mutableStateMapOf<String, Boolean>() }
 
-    val correoInvalido = correo.isNotBlank() && !correo.esCorreoValido()
-    val errorClave = claveRepetida.isNotEmpty() && claveRepetida != clave
-    val formularioValido = nombre.isNotBlank() && correo.esCorreoValido() &&
-            clave.isNotEmpty() && clave == claveRepetida && aceptaTerminos
+    LaunchedEffect(estado.registrado) {
+        estado.registrado?.let { usuario ->
+            modelo.limpiarRegistrado()
+            onRegistrado(usuario)
+        }
+    }
 
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -104,8 +102,8 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                 Spacer(Modifier.height(24.dp))
 
                 OutlinedTextField(
-                    value = nombre,
-                    onValueChange = { nombre = it },
+                    value = estado.nombre,
+                    onValueChange = modelo::cambiarNombre,
                     label = { Text("Nombre completo") },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
@@ -113,18 +111,15 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = correo,
-                    onValueChange = {
-                        correo = it
-                        error = ""
-                    },
+                    value = estado.correo,
+                    onValueChange = modelo::cambiarCorreo,
                     label = { Text("Correo electrónico") },
                     singleLine = true,
-                    isError = error.isNotEmpty() || correoInvalido,
+                    isError = estado.error.isNotEmpty() || estado.correoInvalido,
                     supportingText = {
                         when {
-                            error.isNotEmpty() -> Text(error)
-                            correoInvalido -> Text("Usa un formato como nombre@correo.cl.")
+                            estado.error.isNotEmpty() -> Text(estado.error)
+                            estado.correoInvalido -> Text("Usa un formato como nombre@correo.cl.")
                         }
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -133,10 +128,11 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = clave,
-                    onValueChange = { clave = it },
+                    value = estado.clave,
+                    onValueChange = modelo::cambiarClave,
                     label = { Text("Contraseña") },
                     singleLine = true,
+                    supportingText = { Text("Al menos 8 caracteres, con letras y números.") },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth()
@@ -144,13 +140,13 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
-                    value = claveRepetida,
-                    onValueChange = { claveRepetida = it },
+                    value = estado.claveRepetida,
+                    onValueChange = modelo::cambiarClaveRepetida,
                     label = { Text("Repetir contraseña") },
                     singleLine = true,
-                    isError = errorClave,
+                    isError = estado.errorClave != null,
                     supportingText = {
-                        if (errorClave) Text("Las contraseñas no coinciden.")
+                        estado.errorClave?.let { Text(it) }
                     },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -171,7 +167,7 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                     onExpandedChange = { nivelExpandido = !nivelExpandido }
                 ) {
                     OutlinedTextField(
-                        value = nivel.etiqueta,
+                        value = estado.nivel.etiqueta,
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Selecciona una opción") },
@@ -190,7 +186,7 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                             DropdownMenuItem(
                                 text = { Text(opcion.etiqueta) },
                                 onClick = {
-                                    nivel = opcion
+                                    modelo.cambiarNivel(opcion)
                                     nivelExpandido = false
                                 }
                             )
@@ -213,13 +209,13 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                                 .fillMaxWidth()
                                 .height(48.dp)
                                 .selectable(
-                                    selected = modo == opcion,
-                                    onClick = { modo = opcion },
+                                    selected = estado.modo == opcion,
+                                    onClick = { modelo.cambiarModo(opcion) },
                                     role = Role.RadioButton
                                 ),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            RadioButton(selected = modo == opcion, onClick = null)
+                            RadioButton(selected = estado.modo == opcion, onClick = null)
                             Spacer(Modifier.size(12.dp))
                             Text(opcion.etiqueta, style = MaterialTheme.typography.bodyLarge)
                         }
@@ -239,13 +235,13 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                             .fillMaxWidth()
                             .height(48.dp)
                             .toggleable(
-                                value = seleccionados[apoyo] == true,
-                                onValueChange = { seleccionados[apoyo] = it },
+                                value = apoyo in estado.apoyos,
+                                onValueChange = { modelo.alternarApoyo(apoyo) },
                                 role = Role.Checkbox
                             ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Checkbox(checked = seleccionados[apoyo] == true, onCheckedChange = null)
+                        Checkbox(checked = apoyo in estado.apoyos, onCheckedChange = null)
                         Spacer(Modifier.size(12.dp))
                         Text(apoyo, style = MaterialTheme.typography.bodyLarge)
                     }
@@ -257,14 +253,14 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .toggleable(
-                            value = aceptaTerminos,
-                            onValueChange = { aceptaTerminos = it },
+                            value = estado.aceptaTerminos,
+                            onValueChange = modelo::cambiarTerminos,
                             role = Role.Checkbox
                         )
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Checkbox(checked = aceptaTerminos, onCheckedChange = null)
+                    Checkbox(checked = estado.aceptaTerminos, onCheckedChange = null)
                     Spacer(Modifier.size(12.dp))
                     Text(
                         text = "Acepto los términos y condiciones",
@@ -275,26 +271,16 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                 Spacer(Modifier.height(20.dp))
 
                 Button(
-                    onClick = {
-                        val nuevo = Usuario(
-                            nombre = nombre.trim(),
-                            correo = correo.trim(),
-                            clave = clave,
-                            nivel = nivel,
-                            modo = modo,
-                            apoyos = seleccionados.filterValues { it }.keys.toSet()
-                        )
-                        when (val resultado = RepositorioUsuarios.registrar(nuevo)) {
-                            is ResultadoRegistro.Exito -> onRegistrado(resultado.usuario)
-                            is ResultadoRegistro.Error -> error = resultado.mensaje
-                        }
-                    },
-                    enabled = formularioValido,
+                    onClick = modelo::registrar,
+                    enabled = estado.formularioValido,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp)
                 ) {
-                    Text("Registrarme", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        text = if (estado.cargando) "Creando cuenta…" else "Registrarme",
+                        style = MaterialTheme.typography.titleMedium
+                    )
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -308,123 +294,16 @@ fun RegistroScreen(onRegistrado: (Usuario) -> Unit, onVolver: () -> Unit) {
                     Text("Ya tengo cuenta, volver al inicio")
                 }
 
-                Spacer(Modifier.height(28.dp))
-
-                Text(
-                    text = "Cuentas registradas",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.semantics { heading() }
-                )
-                Spacer(Modifier.height(8.dp))
-                TablaUsuarios()
-
-                Spacer(Modifier.height(16.dp))
-                ResumenRegistros()
-
                 Spacer(Modifier.height(24.dp))
             }
         }
     }
 }
 
-// La contrasena no se muestra en la tabla a proposito
-@Composable
-private fun TablaUsuarios() {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            FilaUsuario("Nombre", "Correo", "Modo", esEncabezado = true)
-            HorizontalDivider()
-            RepositorioUsuarios.listado.forEach { usuario ->
-                FilaUsuario(usuario.nombre, usuario.correo, usuario.modo.etiqueta)
-                HorizontalDivider()
-            }
-        }
-    }
-}
 
-@Composable
-private fun ResumenRegistros() {
-    val datos = RepositorioUsuarios.estadisticas()
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Resumen de las cuentas",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.semantics { heading() }
-            )
-            Spacer(Modifier.height(8.dp))
-            datos.nombresPorModo.forEach { (modo, nombres) ->
-                Text(
-                    text = "${modo.etiqueta}: ${nombres.joinToString(", ")}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Niveles: " + datos.totalPorNivel.entries.joinToString(" · ") {
-                    "${it.key.etiqueta} (${it.value})"
-                },
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = if (datos.conApoyos.isEmpty()) {
-                    "Todavía nadie activa apoyos."
-                } else {
-                    "Con apoyos activos: ${datos.conApoyos.joinToString(", ")}"
-                },
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-    }
-}
 
-// Compose no trae componente de tabla, las columnas se reparten con weight
-@Composable
-private fun FilaUsuario(
-    nombre: String,
-    correo: String,
-    modo: String,
-    esEncabezado: Boolean = false
-) {
-    val peso = if (esEncabezado) FontWeight.Bold else FontWeight.Normal
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp)
-    ) {
-        Text(
-            text = nombre,
-            modifier = Modifier.weight(1.4f),
-            fontWeight = peso,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            text = correo,
-            modifier = Modifier.weight(2f),
-            fontWeight = peso,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Text(
-            text = modo,
-            modifier = Modifier.weight(1f),
-            fontWeight = peso,
-            style = MaterialTheme.typography.bodyMedium
-        )
-    }
-}
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, heightDp = 1400)
 @Composable
 fun RegistroScreenPreview() {
     VozVisibleTheme {
