@@ -85,7 +85,7 @@ fun LoginScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Escribe y hazte escuchar. Escucha lo que te dicen, en texto.",
+                    text = "Comunicación en dos sentidos: Texto convertido en voz y voz convertida en texto.",
                     style = MaterialTheme.typography.bodyLarge
                 )
 

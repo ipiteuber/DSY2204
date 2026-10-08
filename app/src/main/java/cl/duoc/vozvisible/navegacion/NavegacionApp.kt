@@ -11,6 +11,7 @@ import cl.duoc.vozvisible.ui.screens.EscribirScreen
 import cl.duoc.vozvisible.ui.screens.HablarScreen
 import cl.duoc.vozvisible.ui.screens.HomeMenuScreen
 import cl.duoc.vozvisible.ui.screens.LoginScreen
+import cl.duoc.vozvisible.ui.screens.MiCuentaScreen
 import cl.duoc.vozvisible.ui.screens.RecuperarScreen
 import cl.duoc.vozvisible.ui.screens.RegistroScreen
 
@@ -57,6 +58,7 @@ fun NavegacionApp() {
                 onHablar = { navController.navigate(RutaHablar(ruta.correo)) },
                 onBuscarDispositivo = { navController.navigate(RutaBuscarDispositivo(ruta.correo)) },
                 onAyuda = { navController.navigate(RutaAyuda) },
+                onMiCuenta = { navController.navigate(RutaMiCuenta(ruta.correo)) },
                 onCerrarSesion = {
                     navController.navigate(RutaLogin) {
                         popUpTo(0) { inclusive = true }
@@ -83,6 +85,20 @@ fun NavegacionApp() {
             BuscarDispositivoScreen(
                 correoUsuario = entrada.toRoute<RutaBuscarDispositivo>().correo,
                 onVolver = { navController.popBackStack() }
+            )
+        }
+
+        composable<RutaMiCuenta> { entrada ->
+            MiCuentaScreen(
+                correoUsuario = entrada.toRoute<RutaMiCuenta>().correo,
+                onVolver = { navController.popBackStack() },
+                // Tras la baja no queda sesion ni pantalla a la que volver:
+                // se limpia la pila completa y se vuelve al login.
+                onCuentaEliminada = {
+                    navController.navigate(RutaLogin) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
 

@@ -3,6 +3,7 @@ package cl.duoc.vozvisible.data.firebase
 import cl.duoc.vozvisible.data.ModoComunicacion
 import cl.duoc.vozvisible.data.NivelAudicion
 import cl.duoc.vozvisible.data.RepositorioCuentas
+import cl.duoc.vozvisible.data.ResultadoEliminacion
 import cl.duoc.vozvisible.data.ResultadoRegistro
 import cl.duoc.vozvisible.data.Usuario
 import cl.duoc.vozvisible.data.esCorreoValido
@@ -22,7 +23,7 @@ class CuentasFirebase(
             firestore.guardarPerfil(usuario)
         }.fold(
             onSuccess = { ResultadoRegistro.Exito(usuario) },
-            onFailure = { ResultadoRegistro.Error(it.message ?: "No pudimos crear la cuenta.") }
+            onFailure = { ResultadoRegistro.Error(it.message ?: "No fue posible crear la cuenta.") }
         )
     }
 
@@ -51,6 +52,23 @@ class CuentasFirebase(
 
     override suspend fun listado(): List<Usuario> =
         runCatching { firestore.listarPerfiles() }.getOrDefault(emptyList())
+
+    // Orden deliberado: Primero la actividad y el perfil, al final la credencial.
+    // Si se borrara primero la credencial, las reglas de Firestore rechazarian
+    // los borrados siguientes y quedarian documentos huerfanos.
+    override suspend fun eliminarCuenta(correo: String, clave: String): ResultadoEliminacion =
+        runCatching {
+            firestore.borrarActividadDe(correo)
+            firestore.borrarPerfil(correo)
+            autenticacion.eliminarCuenta(correo, clave)
+        }.fold(
+            onSuccess = { ResultadoEliminacion.Exito },
+            onFailure = {
+                ResultadoEliminacion.Error(
+                    it.message ?: "No pudimos eliminar la cuenta. Revisa la contraseña."
+                )
+            }
+        )
 
     override fun cerrarSesion() {
         autenticacion.cerrarSesion()

@@ -1,5 +1,6 @@
 package cl.duoc.vozvisible.data.firebase
 
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
@@ -25,6 +26,16 @@ class AutenticacionService(private val auth: FirebaseAuth = Firebase.auth) {
 
     suspend fun enviarCorreoRecuperacion(correo: String) {
         auth.sendPasswordResetEmail(correo.trim()).await()
+    }
+
+    // Firebase exige una credencial reciente para borrar una cuenta: Si la sesion
+    // lleva tiempo abierta, delete() falla con requires-recent-login. Por eso se
+    // vuelve a autenticar con la clave antes de eliminar.
+    suspend fun eliminarCuenta(correo: String, clave: String) {
+        val usuario = auth.currentUser ?: error("No hay una sesión iniciada.")
+        val credencial = EmailAuthProvider.getCredential(correo.trim(), clave)
+        usuario.reauthenticate(credencial).await()
+        usuario.delete().await()
     }
 
     fun cerrarSesion() = auth.signOut()

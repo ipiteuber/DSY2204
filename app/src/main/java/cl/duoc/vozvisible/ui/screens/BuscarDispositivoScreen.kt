@@ -44,9 +44,11 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.duoc.vozvisible.data.formatearCoordenadas
-import cl.duoc.vozvisible.ui.theme.VerdeAcento
+import cl.duoc.vozvisible.ui.theme.MentaTinta
 import cl.duoc.vozvisible.ui.viewmodel.BuscarDispositivoViewModel
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 
 // Muestra la ultima ubicacion conocida del dispositivo y guarda cada consulta.
 @SuppressLint("MissingPermission")
@@ -63,10 +65,23 @@ fun BuscarDispositivoScreen(
 
     fun pedirUltimaUbicacion() {
         val cliente = LocationServices.getFusedLocationProviderClient(contexto)
+        // lastLocation devuelve null si el telefono no tomo una posicion hace poco,
+        // asi que en ese caso se pide una lectura nueva en vez de dar por fallida la busqueda.
         cliente.lastLocation
             .addOnSuccessListener { ubicacion ->
-                if (ubicacion == null) vm.sinUbicacion()
-                else vm.ubicacionEncontrada(correoUsuario, ubicacion.latitude, ubicacion.longitude)
+                if (ubicacion != null) {
+                    vm.ubicacionEncontrada(correoUsuario, ubicacion.latitude, ubicacion.longitude)
+                } else {
+                    cliente.getCurrentLocation(
+                        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                        CancellationTokenSource().token
+                    )
+                        .addOnSuccessListener { nueva ->
+                            if (nueva == null) vm.sinUbicacion()
+                            else vm.ubicacionEncontrada(correoUsuario, nueva.latitude, nueva.longitude)
+                        }
+                        .addOnFailureListener { vm.sinUbicacion() }
+                }
             }
             .addOnFailureListener { vm.sinUbicacion() }
     }
@@ -105,7 +120,7 @@ fun BuscarDispositivoScreen(
                                 Icon(
                                     imageVector = Icons.Filled.LocationOn,
                                     contentDescription = null,
-                                    tint = VerdeAcento,
+                                    tint = MentaTinta,
                                     modifier = Modifier.size(32.dp)
                                 )
                                 Spacer(Modifier.size(12.dp))
@@ -117,7 +132,7 @@ fun BuscarDispositivoScreen(
                             }
                         } else {
                             Text(
-                                text = "Todavía no has consultado la ubicación.",
+                                text = "Aún no hay consultas de ubicación.",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }

@@ -78,7 +78,7 @@ fun HablarScreen(
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Escribe una frase y el teléfono la dirá en voz alta por ti.",
+                text = "Escribe una frase y el dispositivo la reproduce en voz alta.",
                 style = MaterialTheme.typography.bodyLarge
             )
 
@@ -146,7 +146,7 @@ fun HablarScreen(
 
             if (estado.historial.isEmpty()) {
                 Text(
-                    text = "Todavía no has reproducido frases.",
+                    text = "Aún no hay frases reproducidas.",
                     style = MaterialTheme.typography.bodyLarge
                 )
             } else {

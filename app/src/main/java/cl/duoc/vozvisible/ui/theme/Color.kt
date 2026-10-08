@@ -2,17 +2,26 @@ package cl.duoc.vozvisible.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Paleta de contraste alto. AzulPrincipal sobre blanco da 7.7:1, sobre el minimo AAA de WCAG.
+// Paleta pastel de contraste alto. Cada fondo pastel se usa siempre con su tinta
+// correspondiente: La combinacion mas baja da 7,4:1, sobre el minimo AAA de WCAG (7:1).
 val AzulPrincipal = Color(0xFF0B5394)
-val AzulClaro = Color(0xFFD6E5F5)
-val AzulOscuro = Color(0xFF06304F)
-val AmbarAcento = Color(0xFF8A5000)
-val AmbarClaro = Color(0xFFFCE9CC)
-val VerdeAcento = Color(0xFF1F6B4A)
-val VerdeClaro = Color(0xFFD5EADF)
-val GrisAzulado = Color(0xFF445566)
-val GrisAzuladoClaro = Color(0xFFE2E7EC)
-val FondoClaro = Color(0xFFF6F8FB)
+val AzulClaro = Color(0xFFDCEAFB)
+val AzulOscuro = Color(0xFF0A3A5C)
+
+val MentaClaro = Color(0xFFD9F0E4)
+val MentaTinta = Color(0xFF0E4F35)
+
+val DuraznoClaro = Color(0xFFFDE7D2)
+val DuraznoTinta = Color(0xFF6B3A00)
+
+val LilaClaro = Color(0xFFE7E2F7)
+val LilaTinta = Color(0xFF3E3270)
+
+val RosaClaro = Color(0xFFFBE0E6)
+val RosaTinta = Color(0xFF6E2338)
+
+val FondoClaro = Color(0xFFF7F9FC)
 val TextoPrincipal = Color(0xFF10161C)
 val TextoSecundario = Color(0xFF3B4652)
+val Borde = Color(0xFFC9D4E0)
 val RojoError = Color(0xFFB3261E)

@@ -28,6 +28,10 @@ object ActividadEnMemoria : RepositorioActividad {
         registros.removeAll { it.tipo == tipo && it.id == id }
     }
 
+    override suspend fun borrarTodo(correo: String) {
+        registros.removeAll { it.correo.equals(correo, ignoreCase = true) }
+    }
+
     fun reiniciar() {
         registros.clear()
         siguienteId = 1

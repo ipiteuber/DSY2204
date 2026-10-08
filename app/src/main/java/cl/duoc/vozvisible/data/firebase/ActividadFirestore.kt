@@ -19,4 +19,8 @@ class ActividadFirestore(private val firestore: FirestoreService) : RepositorioA
     override suspend fun borrar(tipo: TipoActividad, id: String) {
         runCatching { firestore.borrarRegistro(tipo, id) }
     }
+
+    override suspend fun borrarTodo(correo: String) {
+        runCatching { firestore.borrarActividadDe(correo) }
+    }
 }

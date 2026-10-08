@@ -17,6 +17,7 @@ interface RepositorioCuentas {
     suspend fun perfil(correo: String): Usuario?
     suspend fun guardarPerfil(usuario: Usuario)
     suspend fun listado(): List<Usuario>
+    suspend fun eliminarCuenta(correo: String, clave: String): ResultadoEliminacion
     fun cerrarSesion()
     fun correoActual(): String?
 }
@@ -26,6 +27,7 @@ interface RepositorioActividad {
     suspend fun listar(correo: String, tipo: TipoActividad): List<RegistroActividad>
     suspend fun actualizar(registro: RegistroActividad)
     suspend fun borrar(tipo: TipoActividad, id: String)
+    suspend fun borrarTodo(correo: String)
 }
 
 // Elige la implementacion al arrancar: Firebase si hay credenciales de verdad,

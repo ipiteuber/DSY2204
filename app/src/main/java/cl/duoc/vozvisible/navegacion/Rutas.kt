@@ -27,3 +27,6 @@ data class RutaHablar(val correo: String)
 
 @Serializable
 data class RutaBuscarDispositivo(val correo: String)
+
+@Serializable
+data class RutaMiCuenta(val correo: String)

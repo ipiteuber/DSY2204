@@ -80,7 +80,7 @@ fun EscribirScreen(
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Escribe lo que quieres decir. Al confirmar se muestra en letras grandes para que la otra persona lo lea.",
+                text = "Escribe el mensaje. Al confirmar se presenta en tamaño amplio para que el interlocutor pueda leerlo.",
                 style = MaterialTheme.typography.bodyLarge
             )
 
@@ -125,7 +125,7 @@ fun EscribirScreen(
                     .fillMaxWidth()
                     .height(56.dp)
             ) {
-                Text("Mostrar en grande", style = MaterialTheme.typography.titleMedium)
+                Text("Mostrar en pantalla grande", style = MaterialTheme.typography.titleMedium)
             }
 
             if (estado.aviso.isNotEmpty()) {
@@ -144,7 +144,7 @@ fun EscribirScreen(
 
             if (estado.guardados.isEmpty()) {
                 Text(
-                    text = "Todavía no has guardado mensajes.",
+                    text = "Aún no hay mensajes guardados.",
                     style = MaterialTheme.typography.bodyLarge
                 )
             } else {

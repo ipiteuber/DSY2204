@@ -43,7 +43,7 @@ class LoginViewModel(
             val usuario = cuentas.iniciarSesion(actual.correo, actual.clave)
             _estado.update {
                 if (usuario == null) {
-                    it.copy(cargando = false, error = "El correo o la contraseña no coinciden.")
+                    it.copy(cargando = false, error = "El correo o la contraseña no corresponden a una cuenta registrada.")
                 } else {
                     it.copy(cargando = false, autenticado = usuario)
                 }

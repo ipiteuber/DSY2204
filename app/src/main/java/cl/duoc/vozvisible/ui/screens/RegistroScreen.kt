@@ -95,7 +95,7 @@ fun RegistroScreen(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Cuéntanos cómo prefieres comunicarte para adaptar la aplicación a ti.",
+                    text = "Indica tu forma preferida de comunicación para adaptar la aplicación.",
                     style = MaterialTheme.typography.bodyLarge
                 )
 
@@ -225,7 +225,7 @@ fun RegistroScreen(
                 Spacer(Modifier.height(20.dp))
 
                 Text(
-                    text = "Apoyos que quieres activar",
+                    text = "Apoyos por activar",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.semantics { heading() }
                 )

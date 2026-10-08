@@ -1,6 +1,7 @@
 package cl.duoc.vozvisible.data.memoria
 
 import cl.duoc.vozvisible.data.RepositorioCuentas
+import cl.duoc.vozvisible.data.ResultadoEliminacion
 import cl.duoc.vozvisible.data.ResultadoRegistro
 import cl.duoc.vozvisible.data.Usuario
 import cl.duoc.vozvisible.data.esCorreoValido
@@ -42,6 +43,20 @@ object CuentasEnMemoria : RepositorioCuentas {
     }
 
     override suspend fun listado(): List<Usuario> = usuarios.toList()
+
+    // Baja definitiva de la cuenta. Se pide la clave otra vez porque la operacion
+    // no tiene vuelta atras y la sesion abierta no basta como autorizacion.
+    override suspend fun eliminarCuenta(correo: String, clave: String): ResultadoEliminacion {
+        val cuenta = buscar(correo)
+            ?: return ResultadoEliminacion.Error("No encontramos esa cuenta.")
+        if (cuenta.clave != clave) {
+            return ResultadoEliminacion.Error("La contraseña no coincide con la cuenta.")
+        }
+        usuarios.remove(cuenta)
+        ActividadEnMemoria.borrarTodo(cuenta.correo)
+        if (sesion.equals(cuenta.correo, ignoreCase = true)) sesion = null
+        return ResultadoEliminacion.Exito
+    }
 
     override fun cerrarSesion() {
         sesion = null

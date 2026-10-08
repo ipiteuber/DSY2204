@@ -28,10 +28,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import cl.duoc.vozvisible.ui.theme.AmbarAcento
+import cl.duoc.vozvisible.ui.theme.DuraznoTinta
 import cl.duoc.vozvisible.ui.theme.AzulPrincipal
-import cl.duoc.vozvisible.ui.theme.GrisAzulado
-import cl.duoc.vozvisible.ui.theme.VerdeAcento
+import cl.duoc.vozvisible.ui.theme.LilaTinta
+import cl.duoc.vozvisible.ui.theme.MentaTinta
 import cl.duoc.vozvisible.ui.theme.VozVisibleTheme
 
 private data class PasoAyuda(
@@ -44,27 +44,33 @@ private data class PasoAyuda(
 private val pasos = listOf(
     PasoAyuda(
         1, "Escribir",
-        "Toca Escribir en el menú, redacta tu mensaje y presiona Mostrar en pantalla grande. " +
-            "El texto aparece en letra muy grande para que la otra persona lo lea sin esfuerzo.",
+        "Selecciona Escribir en el menú, redacta el mensaje y presiona Mostrar en pantalla " +
+            "grande. El texto se presenta en tamaño amplio para que el interlocutor pueda leerlo.",
         AzulPrincipal
     ),
     PasoAyuda(
         2, "Hablar",
-        "Toca Hablar, escribe lo que quieres decir y presiona Reproducir en voz alta. " +
-            "El teléfono lo dice por ti, así que no necesitas usar tu voz.",
-        AmbarAcento
+        "Selecciona Hablar, escribe el mensaje y presiona Reproducir en voz alta. " +
+            "El dispositivo lo reproduce, sin necesidad de usar la voz propia.",
+        DuraznoTinta
     ),
     PasoAyuda(
         3, "Buscar dispositivo",
-        "Toca Buscar dispositivo y luego Actualizar ubicación. La aplicación te muestra dónde " +
-            "está el teléfono. La primera vez te va a pedir permiso de ubicación: acéptalo.",
-        VerdeAcento
+        "Selecciona Buscar dispositivo y luego Actualizar ubicación. La aplicación indica la " +
+            "ubicación del teléfono. En el primer uso solicita el permiso de ubicación.",
+        MentaTinta
     ),
     PasoAyuda(
-        4, "Tus frases quedan guardadas",
-        "Cada mensaje que escribes o reproduces se guarda en tu cuenta. Puedes volver a verlos " +
-            "en la misma pantalla y borrar los que ya no necesites.",
-        GrisAzulado
+        4, "Historial guardado",
+        "Cada mensaje escrito o reproducido queda guardado en la cuenta. Se puede consultar en " +
+            "la misma pantalla y eliminar los registros que ya no se necesiten.",
+        LilaTinta
+    ),
+    PasoAyuda(
+        5, "Mi cuenta",
+        "Selecciona Mi cuenta para revisar los datos del perfil. Desde ahí también se puede " +
+            "eliminar la cuenta de forma definitiva, junto con todo el historial guardado.",
+        AzulPrincipal
     )
 )
 
@@ -88,7 +94,7 @@ fun AyudaScreen(onVolver: () -> Unit) {
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Cuatro pasos para empezar. No necesitas conocimientos técnicos.",
+                    text = "Cinco pasos para comenzar. No se requieren conocimientos técnicos.",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Spacer(Modifier.height(20.dp))

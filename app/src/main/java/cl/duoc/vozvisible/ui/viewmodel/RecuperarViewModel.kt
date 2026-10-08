@@ -40,9 +40,9 @@ class RecuperarViewModel(
                     cargando = false,
                     esError = !enviado,
                     mensaje = if (enviado) {
-                        "Listo. Revisa tu bandeja de entrada en unos minutos."
+                        "Correo enviado. Revisa tu bandeja de entrada en unos minutos."
                     } else {
-                        "No encontramos una cuenta con ese correo."
+                        "No existe una cuenta registrada con ese correo."
                     }
                 )
             }

@@ -55,6 +55,10 @@ class FirestoreService(private val db: FirebaseFirestore = Firebase.firestore) {
             )
         }
 
+    suspend fun borrarPerfil(correo: String) {
+        db.collection(PERFILES).document(correo.lowercase()).delete().await()
+    }
+
     suspend fun crearRegistro(registro: RegistroActividad): RegistroActividad {
         val referencia = db.collection(registro.tipo.coleccion)
             .add(registro.comoMapa()).await()
@@ -75,6 +79,17 @@ class FirestoreService(private val db: FirebaseFirestore = Firebase.firestore) {
 
     suspend fun borrarRegistro(tipo: TipoActividad, id: String) {
         db.collection(tipo.coleccion).document(id).delete().await()
+    }
+
+    // Firestore no borra en cascada: Hay que recorrer cada coleccion y borrar
+    // los documentos del usuario uno por uno antes de dar de baja la cuenta.
+    suspend fun borrarActividadDe(correo: String) {
+        TipoActividad.entries.forEach { tipo ->
+            db.collection(tipo.coleccion)
+                .whereEqualTo("correo", correo.lowercase())
+                .get().await().documents
+                .forEach { it.reference.delete().await() }
+        }
     }
 }
 

@@ -22,6 +22,11 @@ data class Usuario(
     val apoyos: Set<String> = emptySet()
 )
 
+sealed interface ResultadoEliminacion {
+    data object Exito : ResultadoEliminacion
+    data class Error(val mensaje: String) : ResultadoEliminacion
+}
+
 sealed interface ResultadoRegistro {
     data class Exito(val usuario: Usuario) : ResultadoRegistro
     data class Error(val mensaje: String) : ResultadoRegistro

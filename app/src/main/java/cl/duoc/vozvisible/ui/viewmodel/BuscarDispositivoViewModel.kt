@@ -46,7 +46,7 @@ class BuscarDispositivoViewModel(
         it.copy(
             buscando = false,
             permisoNegado = true,
-            mensaje = "Sin el permiso de ubicación no podemos mostrar dónde está el dispositivo. " +
+            mensaje = "Sin el permiso de ubicación no es posible mostrar dónde está el dispositivo. " +
                     "Puedes activarlo en los ajustes del teléfono."
         )
     }
@@ -54,7 +54,7 @@ class BuscarDispositivoViewModel(
     fun sinUbicacion() = _estado.update {
         it.copy(
             buscando = false,
-            mensaje = "Todavía no hay una ubicación guardada. Activa el GPS y vuelve a intentarlo."
+            mensaje = "Aún no hay una ubicación registrada. Activa el GPS y vuelve a intentarlo."
         )
     }
 

@@ -73,7 +73,7 @@ fun RecuperarScreen(onVolver: () -> Unit, modelo: RecuperarViewModel = viewModel
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = "Escribe el correo con el que te registraste y te enviaremos un enlace para crear una contraseña nueva.",
+                    text = "Escribe el correo registrado. Se enviará un enlace para crear una contraseña nueva.",
                     style = MaterialTheme.typography.bodyLarge
                 )
 
